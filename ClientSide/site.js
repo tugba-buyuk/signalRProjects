@@ -2,7 +2,7 @@
 
 $(function () {
     const connection = new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:5153/myhub")
+        .withUrl("http://localhost:5153/messagehub")
         .withAutomaticReconnect([1000,2000,4000]) // parantez içinde ms cisinden periyotlar belirlenmezse default olarak 0 2 10 30 s aralıklarla istek atar
         .build();
 
@@ -59,8 +59,8 @@ $(function () {
     })
 
     //when a client leaved
-    connection.on("userLeaved",connectionId=>{
-        status.html(`${connectionId} leaved from server.`);
+    connection.on("userLeft",connectionId=>{
+        status.html(`${connectionId} left from server.`);
         status.css("background-color","red");
         statusAnimation();
     })
@@ -73,9 +73,22 @@ $(function () {
             $("#clientList").append(text);
     });
 
+    let _connectionId="";
+    connection.on("getConnection",connectionId=>{
+        _connectionId=connectionId;
+        $("#connectionId").html(`ConnectionId: ${connectionId}`);
+    })
+    $("#chooseGroup").on("click",()=>{
+        let groupName=$("input[name=groupName]:checked").val();
+        connection.on("addGroup",_connectionId,groupName).catch(err=>console.log(err));
+    })
+
+
+
 
     $("#btnSubmit").on("click", function () {
         let message = $("#txtMessage").val();
+        let connectionIds=$("#connectionIdList").val().split(",");
         connection.invoke("SendMessageAsync", message).catch(error => console.log(error));
     });
     connection.on("receiveMessage",message=>{
